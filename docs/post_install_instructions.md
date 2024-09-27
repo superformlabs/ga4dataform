@@ -1,11 +1,12 @@
-So, I’ve installed ga4dataform.. now what?
-Browse to the files
+# So, I’ve installed ga4dataform.. now what?
+## Browse to the files
 On the repository page, select the created repository you just created, and browse to the Development workspace
 
+![screenshot](Browse_files.png)
 
 Browse to includes/custom_config.js and adjust the parameters to your needs
 
-Add some customisations
+## Add some customisations
 Now, you can configure custom parameters you want in your events dataset. Let’s look at GA4 and just use those:
 
 We see 7 custom dimensions, of which 6 are needed
@@ -26,7 +27,7 @@ const CUSTOM_PARAMS_ARRAY = [
 
 This website uses q as search term url parameter, and some other URL parameters to indicate filters. Let’s add those:
 
-Save your changes
+## Save your changes
 When making changes, you have to test them (which we’re not going to do now, haha) and when it’s all working: push them into production.
 First commit, then push
 Commit
