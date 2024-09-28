@@ -22,7 +22,8 @@ clean_path is already in the model (as page.path)
 
 I will rename the event param shop to become the column name shop_name
 
-```const CUSTOM_PARAMS_ARRAY = [
+`
+const CUSTOM_PARAMS_ARRAY = [
   // outside the core ones
   { name: "details", type: "string" },
   { name: "is_logged_in", type: "string" },
@@ -30,7 +31,8 @@ I will rename the event param shop to become the column name shop_name
   { name: "message", type: "string" },
   { name: "product_name", type: "string" },
   { name: "shop", type: "string", renameTo: "shop_name" },
-];``` 
+];
+`
 
 This website uses q as search term url parameter, and some other URL parameters to indicate filters. Let’s add those:
 
@@ -50,6 +52,8 @@ You've pushed successfully when the workspace is up to date and the green checkm
 
 ## Run the model
 Under “releases and scheduling”, you can find the preconfigured “production” configuration.
+![screenshot](push.png)
+
 
 Click start execution, and fill in the popup
 
@@ -57,43 +61,54 @@ Click "Start Execution" now.
 
 ## Check for success
 Under “workflow execution logs” you can check if the model has ran succesfully
+![screenshot](workflow_success.png)
+
 
 In this case, there is an error! Click “VIEW DETAILS”
 
 If we scroll down to row 629 we see that”ae-prijsfilter” is an invalid column name. Oops! We should have tested..
+![screenshot](prijsfilter.png)
+
 
 Back to the source. Let’s rename the column to prijsfilter
+
+`
        // custom
     { name: "q",cleaningMethod: lowerSQL },
     { name: "categorie",cleaningMethod: lowerSQL },
     { name: "ae-prijsfilter",cleaningMethod: lowerSQL, renameTo: 'prijsfilter' },
     { name: "kleur",cleaningMethod: lowerSQL },
     { name: "manufacturer",cleaningMethod: lowerSQL },
+`
 
 ## Remember
 commit
 push
+
 ## Start new execution
 Again
 production
 all tags
 run with full refresh
+
 ## Check for success - part 2
 Go to the workflow execution logs, and click REFRESH until you’re tired
 If all check marks are green, the model ran successfully!
 
-# Check Big Query
+## Check Big Query
 Go to Bigquery, and you should see the new tables.
 Currently, the customisations are in the _outputs/ga4_events table in the schema under
+![screenshot](bq_output.png)
 
 
-# Connect Looker Studio to the sessions table
+
+## Connect Looker Studio to the sessions table
 Open Looker Studio
 Add data source, choose Big Query
 Browse to the demo_daily_sessions_report table
 Use session_date as date range dimension
-
+![screenshot](looker_bq.png)
 Click ADD
 # Now go wild!
-
+![screenshot](looker_dashboard.png)
 
