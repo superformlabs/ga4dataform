@@ -41,3 +41,59 @@ This website uses q as search term url parameter, and some other URL parameters 
 When making changes, you have to test them (which we’re not going to do now, haha) and when it’s all working: push them into production.
 First commit, then push
 Commit
+
+![screenshot](commit.png)
+
+You've pushed successfully when the workspace is up to date and the green checkmark shows
+
+![screenshot](push.png)
+
+## Run the model
+Under “releases and scheduling”, you can find the preconfigured “production” configuration.
+
+Click start execution, and fill in the popup
+
+Click "Start Execution" now.
+
+## Check for success
+Under “workflow execution logs” you can check if the model has ran succesfully
+
+In this case, there is an error! Click “VIEW DETAILS”
+
+If we scroll down to row 629 we see that”ae-prijsfilter” is an invalid column name. Oops! We should have tested..
+
+Back to the source. Let’s rename the column to prijsfilter
+       // custom
+    { name: "q",cleaningMethod: lowerSQL },
+    { name: "categorie",cleaningMethod: lowerSQL },
+    { name: "ae-prijsfilter",cleaningMethod: lowerSQL, renameTo: 'prijsfilter' },
+    { name: "kleur",cleaningMethod: lowerSQL },
+    { name: "manufacturer",cleaningMethod: lowerSQL },
+
+## Remember
+commit
+push
+## Start new execution
+Again
+production
+all tags
+run with full refresh
+## Check for success - part 2
+Go to the workflow execution logs, and click REFRESH until you’re tired
+If all check marks are green, the model ran successfully!
+
+# Check Big Query
+Go to Bigquery, and you should see the new tables.
+Currently, the customisations are in the _outputs/ga4_events table in the schema under
+
+
+# Connect Looker Studio to the sessions table
+Open Looker Studio
+Add data source, choose Big Query
+Browse to the demo_daily_sessions_report table
+Use session_date as date range dimension
+
+Click ADD
+# Now go wild!
+
+
