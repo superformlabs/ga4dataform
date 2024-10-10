@@ -2,16 +2,16 @@
 ## Browse to the files
 On the repository page, select the created repository you just created, and browse to the Development workspace
 
-![screenshot](Browse_files.png)
+![screenshot](images/Browse_files.png)
 
 Browse to includes/custom_config.js and adjust the parameters to your needs
 
-![screenshot](custom_config.png)
+![screenshot](images/custom_config.png)
 
 ## Add some customisations
 Now, you can configure custom parameters you want in your events dataset. Let’s look at GA4 and just use those:
 
-![screenshot](custom_params.png)
+![screenshot](images/custom_params.png)
 
 
 We see 7 custom dimensions, of which 6 are needed
@@ -36,7 +36,7 @@ const CUSTOM_PARAMS_ARRAY = [
 
 This website uses q as search term url parameter, and some other URL parameters to indicate filters. Let’s add those:
 
-![screenshot](url_params.png)
+![screenshot](images/url_params.png)
 
 
 ## Save your changes
@@ -44,15 +44,15 @@ When making changes, you have to test them (which we’re not going to do now, h
 First commit, then push
 Commit
 
-![screenshot](commit.png)
+![screenshot](images/commit.png)
 
 You've pushed successfully when the workspace is up to date and the green checkmark shows
 
-![screenshot](push.png)
+![screenshot](images/push.png)
 
 ## Run the model
 Under “releases and scheduling”, you can find the preconfigured “production” configuration.
-![screenshot](push.png)
+![screenshot](images/push.png)
 
 
 Click start execution, and fill in the popup
@@ -61,13 +61,13 @@ Click "Start Execution" now.
 
 ## Check for success
 Under “workflow execution logs” you can check if the model has ran succesfully
-![screenshot](workflow_success.png)
+![screenshot](images/workflow_success.png)
 
 
 In this case, there is an error! Click “VIEW DETAILS”
 
 If we scroll down to row 629 we see that”ae-prijsfilter” is an invalid column name. Oops! We should have tested..
-![screenshot](prijsfilter.png)
+![screenshot](images/prijsfilter.png)
 
 
 Back to the source. Let’s rename the column to prijsfilter
@@ -98,7 +98,7 @@ If all check marks are green, the model ran successfully!
 ## Check Big Query
 Go to Bigquery, and you should see the new tables.
 Currently, the customisations are in the _outputs/ga4_events table in the schema under
-![screenshot](bq_output.png)
+![screenshot](images/bq_output.png)
 
 
 
@@ -107,8 +107,8 @@ Open Looker Studio
 Add data source, choose Big Query
 Browse to the demo_daily_sessions_report table
 Use session_date as date range dimension
-![screenshot](looker_bq.png)
+![screenshot](images/looker_bq.png)
 Click ADD
 # Now go wild!
-![screenshot](looker_dashboard.png)
+![screenshot](images/looker_dashboard.png)
 
