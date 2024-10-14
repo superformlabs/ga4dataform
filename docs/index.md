@@ -145,8 +145,8 @@ definitions
 ### Using GA4Dataform after installation
 1. **First SQL workflow run**.
 2. **Change schedule**.
-3. **Git Connection**: Not available yet.
-4. **Releases and Scheduling**: Set by installer; customizable via Dataform UI.
+3. **Git Connection**: GA4Dataform is not (yet) linked to any git repository. If any changes and customisation are made to the project, changes should be committed to the default Dataform repository. Versioning is not available. 
+4. **Releases and Scheduling**: Set by installer; customizable via Dataform UI. The installer will automatically create a Release and a Workflow configuration using the dataform API. The release will be triggered at 9AM UTC+00:00 and the workflow will be triggered at 10AM UTC+00:00. These values can be modified directly from the dataform UI without impacting the functionality of the project. 
 
 BigQuery Project
 GA4Dataform generates tables in BigQuery. Everything will be under the dataform-package project with the following structure: 
@@ -168,14 +168,9 @@ Dataform-package (project)
 │   ├── assertion_logs
 ```
 
-### Using GA4Dataform after installation
-#### First SQL workflow run
-#### Change schedule
-#### Git Connection
-GA4Dataform is not (yet) linked to any git repository. If any changes and customisation are made to the project, changes should be committed to the default Dataform repository. Versioning is not available. 
 
 #### Releases and Scheduling
-The installer will automatically create a Release and a Workflow configuration using the dataform API. The release will be triggered at 9AM UTC+00:00 and the workflow will be triggered at 10AM UTC+00:00. These values can be modified directly from the dataform UI without impacting the functionality of the project. 
+
 
 #### Project Location
 Location of the dataform project is set during the installation. It is based on the Location of the GA4 dataset
@@ -187,6 +182,52 @@ Location of the dataform project is set during the installation. It is based on 
 ### Core Features
 #### Basic features | No support & updates
 ##### Incremental loading
+The code shared is part of a GA4 data pipeline using Dataform. The incrementality works by processing only new or updated GA4 event data from BigQuery without reprocessing the entire dataset. Here's a summary of how this is implemented:
+
+1. **Checkpoint Management:**
+- A `date_checkpoint` variable is declared and set to the day after the most recent `event_date` found in the existing table (`stg_ga4_events`).
+- This ensures that only data newer than the most recent processed date is considered for the next load.
+
+set date_checkpoint = (
+  select max(event_date) + 1 
+  from `cst-gcp-projects.superform_transformations.stg_ga4_events` 
+  where is_final = true
+);
+
+2. **Deletion of Updated Data:**
+- Any existing records from the target table (`stg_ga4_events`) where `event_date` is equal to or greater than the `date_checkpoint` are deleted. This ensures that if GA4 has updated any past data, it gets removed and replaced by fresh data.
+
+delete from `cst-gcp-projects.superform_transformations.stg_ga4_events`
+where event_date >= date_checkpoint;
+
+3. **Filtering New Data:**
+- The pipeline processes only the new GA4 events by using `_table_suffix` to fetch data from BigQuery tables (`events_*`) where the `event_date` (derived from `_table_suffix`) is greater than or equal to the `date_checkpoint`.
+- This prevents reprocessing old event data.
+
+and parse_date('%Y%m%d', regexp_extract(_table_suffix, '[0-9]+')) >= date_checkpoint;
+
+4. **Filtering out Intraday Events:**
+- Intraday data, which might still be incomplete or subject to change, is excluded from the query using this condition:
+
+and contains_substr(_table_suffix, 'intraday') is false;
+
+5. **Finalization Logic:**
+- The field `is_final` is computed in the process to determine whether the data is final (older than 3 days). This is used to manage the checkpoint logic, ensuring incremental processing only on data that is finalized.
+
+date_diff(current_date(), cast(event_date as date format 'YYYYMMDD'), day) > 3 as is_final;
+
+6. **Comprehensive Data Transformation:**
+- The code performs data transformations on new GA4 event data, such as sanitizing fields, unpacking nested structures (like `event_params`), and repacking `ecommerce` data.
+- The final step creates an `event_id` using a hash of key event fields to ensure uniqueness.
+
+Summary of Incremental Loading:
+- **Identify New Data:** By setting `date_checkpoint`, the pipeline only processes events that are newer than the last processed date.
+- **Data Deletion for Updates:** It deletes any existing data for the same `event_date` to accommodate updated records from GA4.
+- **Efficient Processing:** Only new and final events are processed, improving the efficiency of data loading.
+- **Finalization Logic:** The `is_final` flag ensures that only finalized events are used in the checkpoint, avoiding partial or incomplete records from intraday tables.
+
+This approach ensures an efficient and consistent update of the GA4 events data while minimizing unnecessary reprocessing.
+
 ##### Partitioning & Clustering
 ##### Fix session breakage on midnight
 ##### Default channel grouping
