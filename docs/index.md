@@ -1,4 +1,4 @@
-# GA4Dataform Docs
+# GA4Dataform
 
 ## Introduction
 
@@ -143,10 +143,33 @@ definitions
 
 
 ### Using GA4Dataform after installation
-1. **First SQL workflow run**.
-2. **Change schedule**.
-3. **Git Connection**: GA4Dataform is not (yet) linked to any git repository. If any changes and customisation are made to the project, changes should be committed to the default Dataform repository. Versioning is not available. 
-4. **Releases and Scheduling**: Set by installer; customizable via Dataform UI. The installer will automatically create a Release and a Workflow configuration using the dataform API. The release will be triggered at 9AM UTC+00:00 and the workflow will be triggered at 10AM UTC+00:00. These values can be modified directly from the dataform UI without impacting the functionality of the project. 
+1. **Releases and Scheduling**: Set by installer; customizable via Dataform UI. The installer will automatically create a Release and a Workflow configuration using the dataform API. The release will be triggered at 9AM UTC+00:00 and the workflow will be triggered at 10AM UTC+00:00. These values can be modified directly from the dataform UI without impacting the functionality of the project. 
+2. **Git Connection**: GA4Dataform is not (yet) linked to any git repository. If any changes and customisation are made to the project, changes should be committed to the default Dataform repository. Versioning is not available. 
+3. **Cost**: 
+# Anticipated Costs for Using Dataform on GA4 BigQuery Export
+
+When using Dataform modeling on GA4 BigQuery export, users should consider the following cost factors:
+
+1. **BigQuery Storage Costs**: 
+   - **GA4 Exported Data Size**: The amount of data exported from GA4 into BigQuery can vary greatly depending on the volume of events tracked, the frequency of tracking, and the granularity of the data collected.
+   - **Storage Pricing**: BigQuery charges based on the amount of data stored. Users can expect to incur costs for the data that is loaded into and stored in BigQuery, and this will grow as more data accumulates over time.
+
+2. **BigQuery Query Costs**:
+   - **Data Processing**: Query costs are based on the amount of data processed by the query. Complex queries, especially those involving large datasets, multiple joins, or advanced calculations (like CTEs), will increase costs.
+   - **Scheduled Queries**: If users are running automated or scheduled queries to keep their datasets up-to-date, they should anticipate regular query costs.
+
+3. **Dataform Query Execution Costs**:
+   - Dataform works by orchestrating queries in BigQuery. While Dataform itself doesn't charge for execution, any underlying BigQuery queries triggered by Dataform models will incur costs, just like running those queries directly.
+
+4. **Data Retention Policies**:
+   - **Table Partitioning**: Users can lower costs by partitioning tables (e.g., by date) and applying expiration dates to remove old or unneeded data.
+   - **Cost Optimization**: GA4 often provides event-level data, which can result in a large number of rows. Optimizing queries and aggregating data at appropriate levels (like sessions or users) can help reduce the data processed and, consequently, the costs.
+
+5. **Free Tier & Discounts**:
+   - BigQuery offers a free tier (usually 10 GB of storage and 1 TB of query processing per month) that small users might stay under. It's important for users to monitor their usage if they want to avoid unexpected costs.
+
+By planning how often they query the data, managing the storage footprint, and optimizing the queries, users can control and reduce their costs effectively.
+
 
 BigQuery Project
 GA4Dataform generates tables in BigQuery. Everything will be under the dataform-package project with the following structure: 
@@ -229,6 +252,18 @@ Summary of Incremental Loading:
 This approach ensures an efficient and consistent update of the GA4 events data while minimizing unnecessary reprocessing.
 
 ##### Partitioning & Clustering
+Partitioning:
+- Partitioning divides a table into smaller, more manageable segments based on a column (e.g., date, timestamp, or integer range).
+- Types:
+  - Time-based partitioning (e.g., by day): Each partition holds data for a specific period (e.g., day).
+  - Ingestion-time partitioning: Automatically partitions data based on when it was ingested into BigQuery.
+- Benefits: Queries that target specific partitions scan less data, reducing cost and improving performance.
+
+Clustering:
+- Clustering organizes data in a table based on the values of one or more columns (cluster keys).
+- BigQuery sorts data within each table by the cluster columns.
+- Benefits: Optimizes queries that filter or aggregate on clustered columns by scanning less data and improving query performance.
+
 ##### Fix session breakage on midnight
 ##### Default channel grouping
 ##### Timestamps in local time zone
@@ -278,6 +313,76 @@ Url_params._gl
 
 
 ### Custom Configuration
+
+
+3. RESERVED_COLUMN_NAMES_ARRAY
+This array contains a list of internal column names used by the package. These columns represent data that is automatically captured by GA4, such as event_id, event_name, user_id, and session_id. These are names the system should avoid overriding because they are critical for tracking.
+
+4. URL_PARAMS_ARRAY
+This array defines URL parameters commonly used in marketing campaigns (like utm_source and utm_medium). These parameters are extracted from URLs and processed using cleaning methods, such as lowerSQL, to ensure consistent formatting.
+
+5. CORE_PARAMS_ARRAY
+This is a crucial array that defines the core event parameters GA4 captures. These parameters cannot be removed or renamed and include elements such as:
+
+ga_session_id: A unique ID for a session.
+engagement_time_msec: The engagement time in milliseconds.
+page_title: The title of the web page viewed.
+These parameters cover a wide range of data categories, including page-specific data, campaign data (like utm parameters), ecommerce data (like transaction_id), and video-related events.
+
+6. GA4_START_DATE
+This defines the first date for processing GA4 events. Only events from this date onward will be processed.
+
+DATA_IS_FINAL_DAYS
+This sets a threshold of 3 days to determine when data is considered final. For instance, GA4 may receive backdated Measurement Protocol hits, so the system waits 3 days before considering the data complete.
+
+LAST_NON_DIRECT_LOOKBACK_DAYS
+This specifies how many days the system should look back to attribute non-direct traffic sources, useful in multi-touch attribution analysis.
+
+ASSERTIONS_*
+
+These assertions ensure data quality by verifying certain conditions.
+
+8. 
+const CUSTOM_EVENT_PARAMS_ARRAY = [];
+const CUSTOM_USER_PROPERTIES_ARRAY = [];
+const CUSTOM_ITEM_PARAMS_ARRAY = [];
+These arrays allow the user to specify custom event parameters, user properties, and item parameters, but they're currently empty. If filled, they would add additional fields to the event data model.
+
+9. Click ID Arrays
+CLICK_IDS_ARRAY: Defines how to classify click IDs (like gclid, dclid, etc.) when source/medium/campaign is not explicitly set.
+KNOWN_CLICK_IDS_ARRAY: Defines a list of known click IDs that should overwrite medium and campaign fields, particularly when no valid source is found.
+For example:
+
+javascript
+Copy code
+{name: 'gclid', medium: "cpc", campaign: "(not set)"}
+This means that if the click ID gclid is found, the medium should be set to "cpc", and the campaign to "(not set)".
+
+10. Exclusion Lists (EVENTS_TO_EXCLUDE, HOSTNAME_EXCLUDE, HOSTNAME_INCLUDE_ONLY)
+const EVENTS_TO_EXCLUDE = [];
+const HOSTNAME_EXCLUDE = [];
+const HOSTNAME_INCLUDE_ONLY = [];
+These arrays allow users to exclude specific events, hostnames, or only include certain hostnames in the data processing. They are currently empty but can be populated with event or hostname values as needed.
+
+11. Social Platforms Regex (SOCIAL_PLATFORMS_REGEX)
+javascript
+Copy code
+const SOCIAL_PLATFORMS_REGEX = ['pinterest', 'facebook', ...];
+This regex list is used to match social platforms (e.g., pinterest, facebook, twitter) in URL parameters to classify traffic correctly.
+
+12. Core Configuration Object (coreConfig)
+const coreConfig = {
+    CORE_PARAMS_ARRAY,
+    RESERVED_COLUMN_NAMES_ARRAY,
+    URL_PARAMS_ARRAY,
+    KNOWN_CLICK_IDS_ARRAY,
+    ...
+};
+This object bundles all the configuration elements into a single object that is exported at the end of the file. It contains all the settings, parameters, and rules defined above and is meant to be imported and used in the main Dataform package processing logic.
+
+
+
+
 #### Custom Google Analytics 4 parameters (CUSTOM_PARAMS_ARRAY)
 #### Adding description here
 #### Event filters
@@ -364,6 +469,8 @@ Website diagnostics
 Troubleshooting
 
 Support & contact
+support@ga4dataform.com
+
 Support
 Users of the open-source and the Core variant of GA4Dataform are not eligible for support.
 Contact
